@@ -6,7 +6,7 @@ Tested up to: 3.5
 Stable tag: trunk
 License: GPL v2 or later
 
-Aid development on a local WordPress site by adding some handy reminders and overriding outgoing emails.
+Aid the development process on a local WordPress site by adding some handy reminders and overriding outgoing emails.
 
 == Description ==
 
@@ -35,9 +35,15 @@ Alternatively, see the official WordPress Codex guide to [Manually Installing Pl
 
 Ideally you should install Easy Local Site in wp-content/mu-plugins (plugins in here are 'Must Use' and are automatically activated). This will mean that it is always activated, even after migrating a database from a production site where the plugin is not installed/activated, so you don't have to remember to manually activate it.
 
+= The WP_LOCAL_DEV constant method =
+
+You must use the WP_LOCAL_DEV constant method as outlined by Mark Jaquith: [markjaquith.wordpress.com/2011/06/24/wordpress-local-dev-tips](http://markjaquith.wordpress.com/2011/06/24/wordpress-local-dev-tips/)
+
+If the WP_LOCAL_DEV constant is not defined this plugin will do nothing. This means you can safely put it in your mu-plugins folder and include it in your Git repository on a production site.
+
 = Overriding outgoing emails =
 
-To override outgoing emails, you must define WP_LOCAL_EMAIL in wp-config.php as follows:
+To override outgoing emails, you must define WP_LOCAL_EMAIL in local-config.php as follows:
 
 define( 'WP_LOCAL_EMAIL', 'me@myemailaddress.com' );
 

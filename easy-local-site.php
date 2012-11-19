@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name:  Easy Local Site
-Description:  Aid development on a local WordPress site by adding some handy reminders and overriding outgoing emails.
+Description:  Aid the development process on a local WordPress site by adding some handy reminders and overriding outgoing emails.
 Version:      0.3
 License:      GPL v2 or later
 Plugin URI:   https://github.com/lumpysimon/wp-easy-local-site
