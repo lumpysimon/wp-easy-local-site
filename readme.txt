@@ -6,13 +6,17 @@ Tested up to: 3.5
 Stable tag: trunk
 License: GPL v2 or later
 
-Aid the development process on a local WordPress site by adding some handy reminders and overriding outgoing emails.
+A set of tools to aid the development process on a local WordPress site.
+
+= Current features: =
+* Display a handy reminder on the toolbar
+* Override outgoing emails, either by sending them to a different address or by logging them as a 'Local Email' custom post type.
 
 == Description ==
 
 When working on a local site and a production site at the same time, things can easily get confusing and you forget which site you're looking at. This plugin adds a hard-to-miss, bright orange reminder to the toolbar and prepends [LOCAL] to the title tag on your local site.
 
-If you've imported a database from a production site, you may also want to avoid sending emails out to real users. This plugin overrides the 'to' address of all outgoing emails, sending them instead to an address specified by you. This enables you to test contact forms, notifications or any other outgoing email communications. All emails will have the original recipient's email address prepended to the subject line so you can see at a glance who they were originally intended for.
+If you've imported a database from a production site, you may also want to avoid sending emails out to real users (e.g. for testing contact forms or notifications). This plugin provides two options: you can override the 'to' address of all outgoing emails, sending them instead to an address specified by you (the original recipient's email address is prepended to the subject line so you can see at a glance who it was originally intended for); or you can disable the outgoing email completely and instead log it as the 'Local Email' custom post type.
 
 = The WP_LOCAL_DEV constant method =
 
@@ -43,15 +47,26 @@ If the WP_LOCAL_DEV constant is not defined this plugin will do nothing. This me
 
 = Overriding outgoing emails =
 
-To override outgoing emails, you must define WP_LOCAL_EMAIL in local-config.php as follows:
+To send all outgoing emails to a specified email address, you must define WP_LOCAL_EMAIL in local-config.php as follows:
 
 define( 'WP_LOCAL_EMAIL', 'me@myemailaddress.com' );
+
+= Disabling/logging outgoing emails =
+
+To disable outgoing emails completely and instead log them as a 'Local Email' custom post type, you must define WP_LOCAL_EMAIL in local-config.php as follows:
+
+define( 'WP_LOCAL_EMAIL', 'post' );
+
+You will then be able to view all sent emails at http://example.com/wp-admin/edit.php?post_type=local-email
 
 = Download from GitHub =
 
 You can also download this plugin from GitHub at [https://github.com/lumpysimon/wp-easy-local-site](https://github.com/lumpysimon/wp-easy-local-site)
 
 == Changelog ==
+
+= 0.4 =
+* Option to disable outgoing emails and log as a 'Local Email' custom post type instead.
 
 = 0.3 =
 * Use WP_LOCAL_EMAIL constant for email address (for easier use by teams in a version-controlled environment)

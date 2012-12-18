@@ -2,7 +2,7 @@
 /*
 Plugin Name:  Easy Local Site
 Description:  Aid the development process on a local WordPress site by adding some handy reminders and overriding outgoing emails.
-Version:      0.3
+Version:      0.4
 License:      GPL v2 or later
 Plugin URI:   https://github.com/lumpysimon/wp-easy-local-site
 Author:       Simon Blackbourn @ Lumpy Lemon
@@ -22,12 +22,11 @@ Domain Path:  /easy-local-languages/
 	and prepends [LOCAL] to the <title> tag on your local site.
 
 	If you've imported a database from a production site, you may also want to avoid
-	sending emails out to real users. This plugin overrides the 'to' address
-	of all outgoing emails, sending them instead to an address specified by you.
-	This enables you to test contact forms, notifications or any other outgoing email communications.
-	All emails will have the original recipient's email address prepended to the subject line
-	so you can see at a glance who they were originally intended for.
-
+	sending emails out to real users (e.g. for testing contact forms or notifications).
+	This plugin provides two options: you can override the 'to' address of all outgoing emails,
+	sending them instead to an address specified by you (the original recipient's email address is
+	prepended to the subject line so you can see at a glance who it was originally intended for);
+	or you can disable the outgoing email completely and instead log it as the 'Local Email' custom post type.
 
 
 	Requirements
@@ -43,6 +42,11 @@ Domain Path:  /easy-local-languages/
 	To override outgoing emails, you must also define WP_LOCAL_EMAIL as follows:
 
 	define( 'WP_LOCAL_EMAIL', 'me@example.com' );
+
+	To disable outgoing emails completely and instead log them as a 'Local Email' custom post type,
+	you must define WP_LOCAL_EMAIL as follows:
+
+	define( 'WP_LOCAL_EMAIL', 'post' );
 
 	Ideally you should install Easy Local Site in wp-content/mu-plugins
 	(plugins in here are 'Must Use' and are automatically activated).
@@ -75,6 +79,9 @@ Domain Path:  /easy-local-languages/
 	Changelog
 	---------
 
+	0.4
+	Option to disable outgoing emails and instead log them by creating a 'Local Email' custom post type. Define WP_LOCAL_EMAIL as 'post' to use this.
+
 	0.3
 	Use WP_LOCAL_EMAIL constant for email address (for easier use by teams in a version-controlled environment).
 	Prepare for localisation.
@@ -92,7 +99,7 @@ Domain Path:  /easy-local-languages/
 
 
 
-class lumpyLocalSite {
+class easyLocalSite {
 
 
 
@@ -107,22 +114,24 @@ class lumpyLocalSite {
 	 */
 	public function __construct() {
 
-		add_action( 'init',           array( $this, 'init'          ) );
-		add_action( 'admin_bar_menu', array( $this, 'toolbar_menu'  ) );
-		add_action( 'wp_head',        array( $this, 'toolbar_style' ) );
-		add_action( 'admin_head',     array( $this, 'toolbar_style' ) );
+		add_action( 'init',                                   array( $this, 'init'          ) );
+		add_action( 'admin_bar_menu',                         array( $this, 'toolbar_menu'  ) );
+		add_action( 'wp_head',                                array( $this, 'toolbar_style' ) );
+		add_action( 'admin_head',                             array( $this, 'toolbar_style' ) );
 
-		add_filter( 'wp_title',       array( $this, 'title'         ), 999, 2 );
-		add_filter( 'admin_title',    array( $this, 'admin_title'   ), 999 );
-		add_filter( 'admin_notices',  array( $this, 'admin_notice'  ) );
-		add_filter( 'wp_mail',        array( $this, 'wp_mail'       ), 999 );
+		add_filter( 'wp_title',                               array( $this, 'title'         ), 999, 2 );
+		add_filter( 'admin_title',                            array( $this, 'admin_title'   ), 999 );
+		add_filter( 'admin_notices',                          array( $this, 'admin_notice'  ) );
+		add_filter( 'wp_mail',                                array( $this, 'override_mail' ), 999 );
+		add_filter( 'manage_local-email_posts_columns',       array( $this, 'cols' ) );
+		add_filter( 'manage_local-email_posts_custom_column', array( $this, 'col' ) );
 
 	}
 
 
 
 	/**
-	 * Load localisation files.
+	 * Load localisation files, set up custom post type.
 	 *
 	 * @return null
 	 */
@@ -133,6 +142,70 @@ class lumpyLocalSite {
 			false,
 			dirname( plugin_basename( __FILE__ ) ) . '/easy-local-languages'
 			);
+
+		if ( defined( 'WP_LOCAL_EMAIL' ) and 'post' == WP_LOCAL_EMAIL ) {
+
+			register_post_type(
+				'local-email',
+				array(
+					'label'                => 'Local emails',
+					'labels'               => array(
+												'name'               => 'Local emails',
+												'singular_name'      => 'Local email',
+												'add_new'            => 'Add new local email',
+												'all_items'          => 'All local emails',
+												'add_new_item'       => 'local email',
+												'edit_item'          => 'Edit local email',
+												'new_item'           => 'New local email',
+												'view_item'          => 'View local email',
+												'search_items'       => 'Search local emails',
+												'not_found'          => 'No local emails found',
+												'not_found_in_trash' => 'No local emails found in trash'
+												),
+					'public'               => false,
+					'show_ui'              => true,
+					'menu_position'        => 999,
+					'hierarchical'         => false,
+					'supports'             => array(
+												'title',
+												'editor'
+												),
+					'has_archive'          => false,
+					'query_var'            => false,
+					'can_export'           => true
+					)
+				);
+
+		/*
+		register_taxonomy(
+			'local-email-recipient',
+			'local-email',
+			array(
+				'label'         => 'Recipients',
+				'labels'        => array(
+									'name'                       => 'Recipients',
+									'singular_name'              => 'Recipient',
+									'search_items'               => 'Search recipients',
+									'popular_items'              => 'Popular recipients',
+									'all_items'                  => 'All recipients',
+									'edit_item'                  => 'Edit recipient',
+									'update_item'                => 'Update recipient',
+									'add_new_item'               => 'Add new recipient',
+									'new_item_name'              => 'New recipient',
+									'separate_items_with_commas' => 'Separate recipients with commas',
+									'add_or_remove_items'        => 'Add or remove recipients',
+									'choose_from_most_used'      => 'Choose from most used recipients',
+									'menu_name'                  => 'Recipients'
+									),
+				'public'        => false,
+				'show_ui'       => true,
+				'show_tagcloud' => false,
+				'hierarchical'  => false
+				)
+			);
+		*/
+
+		}
 
 	}
 
@@ -164,7 +237,13 @@ class lumpyLocalSite {
 	 *
 	 * @return null
 	 */
-	function toolbar_style() { ?>
+	function toolbar_style() {
+
+		if ( ! is_admin_bar_showing() )
+			return;
+
+		?>
+
 		<style>
 			#wpadminbar #wp-admin-bar-lumpy-local-site a {
 				background-color: #c30;
@@ -172,7 +251,9 @@ class lumpyLocalSite {
 				text-shadow: 0 0 0;
 			}
 		</style>
-	<?php }
+
+		<?php
+	}
 
 
 
@@ -238,25 +319,112 @@ class lumpyLocalSite {
 	/**
 	 * Override all outgoing emails & prepend the original recipient to the subject.
 	 *
+	 * @todo   check if there's a better way than null 'to' field to prevent email sending
+	 *
 	 * @param  array $mail The email
 	 * @return array       The email
 	 */
-	function wp_mail( $mail ) {
+	function override_mail( $mail ) {
 
 		// do nothing if the WP_LOCAL_EMAIL constant isn't defined
 		if ( ! defined( 'WP_LOCAL_EMAIL' ) )
 			return $mail;
 
-		// do nothing if WP_LOCAL_EMAIL isn't a valid email address
+		// if the constant is set to 'post'
+		// create a post & set the recipient to null so no email is sent
+		if ( 'post' == WP_LOCAL_EMAIL ) {
+			self::create_post( $mail );
+			$mail['to'] = null;
+			return $mail;
+		}
+
+		// otherwise check if the constant is a valid email address
 		if ( ! is_email( WP_LOCAL_EMAIL ) )
 			return $mail;
 
-		// prepend original recipient to subject
+		// prepend the original recipient to the subject
 		// and set the new recipient
 		$mail['subject'] = '[LOCAL: ' . $mail['to'] . '] ' . $mail['subject'];
-		$mail['to'] = WP_LOCAL_EMAIL;
-
+		$mail['to']      = WP_LOCAL_EMAIL;
 		return $mail;
+
+	}
+
+
+
+	/**
+	 * Create a new 'local email' post from the content of the email.
+	 *
+	 * @param  array $mail The email
+	 * @return null
+	 */
+	function create_post( $mail ) {
+
+		// set the required post fields (post author is the main admin user)
+		$postdata = array(
+						'post_type'    => 'local-email',
+						'post_title'   => wp_strip_all_tags( $mail['subject'] ),
+						'post_content' => $mail['message'],
+						'post_author'  => 1,
+						'post_status'  => 'publish'
+						);
+
+		// insert the post & if successful set the recipient postmeta field
+		if ( $post_id = wp_insert_post( $postdata ) ) {
+			add_post_meta( $post_id, 'easy-local-site-to', esc_html( $mail['to'] ) );
+			/*
+			wp_insert_term( $mail['to'], 'local-email-recipient' );
+			wp_set_object_terms( $post_id, $mail['to'], 'local-email-recipient' );
+			*/
+		}
+
+	}
+
+
+
+	/**
+	 * Define the columns to be used on the Local Email edit.php screen
+	 *
+	 * @param  array $cols The columns
+	 * @return array       The columns
+	 */
+	function cols( $cols ) {
+
+		$cols = array(
+					'cb'          => '<input type="checkbox">',
+					'title'       => __( 'Title' ),
+					'els-to'      => __( 'Recipient', 'easy_local_site' ),
+					'els-message' => __( 'Excerpt' ),
+					'date'        => __( 'Date' )
+					);
+
+		return $cols;
+
+	}
+
+
+
+	/**
+	 * Output the custom columns for the Local Email post type
+	 *
+	 * @param  string $col Column name
+	 * @return null
+	 */
+	function col( $col ) {
+
+		global $post;
+
+		switch ( $col ) {
+
+			case 'els-to':
+				echo get_post_meta( $post->ID, 'easy-local-site-to', true );
+			break;
+
+			case 'els-message':
+				echo wp_trim_words( wp_strip_all_tags( $post->post_content ), 40 );
+			break;
+
+		}
 
 	}
 
@@ -269,7 +437,7 @@ class lumpyLocalSite {
 // kick in only if the WP_LOCAL_DEV constant is set
 
 if ( defined( 'WP_LOCAL_DEV' ) and WP_LOCAL_DEV ) {
-	$lumpy_local_site = new lumpyLocalSite;
+	$easy_local_site = new easyLocalSite;
 }
 
 
