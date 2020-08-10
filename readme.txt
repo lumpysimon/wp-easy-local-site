@@ -2,7 +2,7 @@
 Contributors: lumpysimon
 Tags: developer, development, local, xampp, mamp, wamp, email, override
 Requires at least: 3.1
-Tested up to: 3.5
+Tested up to: 5.5
 Stable tag: trunk
 License: GPL v2 or later
 
